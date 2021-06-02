@@ -4,6 +4,7 @@ open NUnit.Framework
 open gslcProcess
 open commonTypes
 open AssemblyTestSupport
+open pragmaTypes
 
 module SharedSliceTesting =
     let dumpSlices (slices:DNASlice list) =
@@ -81,8 +82,36 @@ type TestProcAssembly() =
             doProcAssemblyLongOligos // NB long oligos
                 name
                 slicesIn
+        // Ensure the assembly is structurally right with respect to primers, gaps, sandwiches
         checkPattern pattern dpps
+        // Then make sure the emitted slices are plausible.  They may not be identical due to approximate ends
         SharedSliceTesting.checkSequence seqs slices
+        // Now sanity check that the primers can be found in the slides
+
+        // tedious but we need to fake out an assembly to hold the dnaParts
+        let assembly :DnaAssembly = {
+           id = None
+           dnaParts = slices
+           name = name
+           uri = None
+           linkerHint = ""
+           pragmas = PragmaCollection Map.empty
+           designParams = DesignParams.initialDesignParams
+           docStrings = []
+           materializedFrom = { LegacyParseTypes.Assembly.name = None
+                                parts = []
+                                uri = None
+                                linkerHint = ""
+                                pragmas = PragmaCollection Map.empty
+                                designParams = DesignParams.initialDesignParams
+                                docStrings = []
+                                capabilities = Capabilities Set.empty
+                                sourcePosition = []}
+           tags = Set.empty
+           topology = Linear}
+
+        // finally check the primers are cool
+        primerValidation.checkPrimersVAssembly [dpps,assembly]
 
     [<Test>]
     /// Equivalent of gFOO^
@@ -299,4 +328,3 @@ type TestProcAssembly() =
             [ linkerAlice ; uFoo ; linkerBob ;pBaz ; oBar; linkerCharlie ; shortInlineWithRabitStart; oBar2 ; shortInlineWithRabitEnd; linkerDoug; tShaz ;linkerEmma ]
             "DGDGDGDSGSDGD"
             [ linkerAlice ; uFoo ; linkerBob ;pBaz ; fuse ; oBar; linkerCharlie ; shortInlineWithRabitStart; oBar2 ; shortInlineWithRabitEnd; linkerDoug; tShaz ;linkerEmma ]
-
