@@ -11,9 +11,9 @@ let checkAnnotation (p:Primer) errorDesc =
             failwithf "primer annotation il (%d) < 0 p=%s %s"
                 a.il (p.Primer.str) errorDesc
         if a.ir >= p.tail.Length + p.body.Length then
-            failwithf "primer annotation ir (%d) off end len=%d %s"
-                a.ir  (p.tail.Length+p.body.Length) errorDesc
-        if a.il > a.ir && p.tail.Length > 0 then 
+            failwithf "primer annotation ir (%d) off end len=%d primer.tail=%s primer.body=%s %s"
+                a.ir  (p.tail.Length+p.body.Length) p.tail.str p.body.str errorDesc
+        if a.il > a.ir && p.tail.Length > 0 then
             failwithf "primer annotation il(%d) > ir(%d) %s" a.il a.ir errorDesc
         match a.iType with
             | ANNEAL when a.ir-a.il+1 < 12 ->
@@ -43,8 +43,8 @@ let checkPrimers (primers : DivergedPrimerPair list list) =
 
                     if s1 <> s2' then
                         failwithf
-                            "primer annotation anneal region fails antiparallel test\nfwd  =%O\nrev  =%O\nrcrev=%O\nname=%s\n"
-                            s1 s2 s2' dpp.name
+                            "primer annotation anneal region fails antiparallel test\nfwd  =%O\nrev  =%O\nrcrev=%O\nname=%s\nf=%s\nr=%s\nrrc=%s\n"
+                            s1 s2 s2' dpp.name dpp.fwd.Primer.str dpp.rev.Primer.str (dpp.rev.Primer.RevComp().str)
                 | None, Some(x) ->
                     failwithf "primer annotation single anneal region rev %d-%d %O"
                         x.il x.ir dpp.rev.Primer
@@ -52,8 +52,8 @@ let checkPrimers (primers : DivergedPrimerPair list list) =
                     failwithf "primer annotation single anneal region fwd %d-%d %O"
                         x.il x.ir dpp.fwd.Primer
                 | None, None -> () // fine
-            | GAP 
-            | SANDWICHGAP 
+            | GAP
+            | SANDWICHGAP
                 -> ()
 
 let checkPrimersVAssembly (pa:(DivergedPrimerPair list*DnaAssembly) list) =
@@ -85,20 +85,20 @@ let checkPrimersVAssembly (pa:(DivergedPrimerPair list*DnaAssembly) list) =
                         assembly.name
                         (assemblySeq.arr |> format60)
                 ()
-            | GAP 
+            | GAP
             | SANDWICHGAP -> ()
-        
+
         let lastN N (c: Dna) = c.[c.Length-1-N |> max 0..c.Length-1]
 
         /// More stringent check that some reasonable primer tail binds to the template DNA sequences
         let templateSeq =
             assembly.dnaParts
-            |> List.map (fun slice -> 
-                match slice.template with 
+            |> List.map (fun slice ->
+                match slice.template with
                 | None when slice.sliceType = SliceType.LINKER -> [|'n';'n'|]
                 | None -> [|'N';'N'|]
                 | Some(x) ->
-                    Array.concat [ [|'N'|] ; x.arr ; [|'N'|] ]) 
+                    Array.concat [ [|'N'|] ; x.arr ; [|'N'|] ])
             |> Array.concat
             |> fun s -> Dna(s, false, AllowAmbiguousBases)
 
@@ -107,8 +107,8 @@ let checkPrimersVAssembly (pa:(DivergedPrimerPair list*DnaAssembly) list) =
         for primer in pList do
             match primer with
             | DPP(dpp) ->
-                let fwd = dpp.fwd.body |> lastN 10 
-                let rev = dpp.rev.body |> lastN 10 |> fun d -> d.RevComp() 
+                let fwd = dpp.fwd.body |> lastN 10
+                let rev = dpp.rev.body |> lastN 10 |> fun d -> d.RevComp()
 
                 let ff = templateSeq.Contains fwd
                 let fr = templateSeqRC.Contains fwd
@@ -118,21 +118,21 @@ let checkPrimersVAssembly (pa:(DivergedPrimerPair list*DnaAssembly) list) =
                 // Ensure assembly contains primer
                 if not (ff || fr) then
                     failwithf
-                        "fwd XXX primer validation failure.  Primerlast10 %O\ntail=%O\nbody=%O\n does not occur fwd or rc in template %s\n>template\n%s\n>assembly\n%s" 
-                        fwd 
-                        dpp.fwd.tail 
-                        dpp.fwd.body 
-                        assembly.name 
+                        "fwd XXX primer validation failure.  Primerlast10 %O\ntail=%O\nbody=%O\n does not occur fwd or rc in template %s\n>template\n%s\n>assembly\n%s"
+                        fwd
+                        dpp.fwd.tail
+                        dpp.fwd.body
+                        assembly.name
                         (templateSeq.arr |> format60)
                         (assemblySeq.arr |> format60)
                 if not (rf || rr) then
                     failwithf
-                        "rev primer validation failure.  Primer %O\ntail=%O\nbody=%O\n does not occur fwd or rc in template %s\n>template\n%s\n>assembly\n%s" 
-                        rev 
+                        "rev primer validation failure.  Primer %O\ntail=%O\nbody=%O\n does not occur fwd or rc in template %s\n>template\n%s\n>assembly\n%s"
+                        rev
                         dpp.rev.tail
                         dpp.rev.body
                         assembly.name
                         (templateSeq.arr |> format60)
                         (assemblySeq.arr |> format60)
-            | GAP 
+            | GAP
             | SANDWICHGAP -> ()

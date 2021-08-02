@@ -122,14 +122,17 @@ let tuneTails
         (dp:DesignParams)
         (fwdTailLenFixed:int option)
         fwdTailLenMin
-        fwdTailLenMax
+        fwdTailLenMaxInitial
         firmMiddle
         (revTailLenFixed:int option)
         revTailLenMin
-        revTailLenMax
+        revTailLenMaxInitial
         (fwd:Primer)
         (rev:Primer)
         (middleDNA : Dna) =
+
+
+
     // Input is two sets of primers like this where the region between | symbols is an inline sequence.
     // Output is adjust primer tails that have a better annealing length
 
@@ -202,6 +205,12 @@ let tuneTails
     let X = rev.body.Length+middleDNA.Length-1
     /// First base of inline region
     let Y = rev.body.Length
+
+    // do this because caller may set the max values to max int and in practice
+    // we can't run off the provided template when calculating Tms
+    let fwdTailLenMax = X+1 |> min fwdTailLenMaxInitial
+    let revTailLenMax = fullTemplate.Length-Y |> min revTailLenMaxInitial
+
     if verbose then
         printfn "procAssembly: tuneTails: tuneTailOpt: X=%d Y=%d\n template=%s" X Y fullTemplate.str
 
@@ -234,7 +243,7 @@ let tuneTails
             | _ -> None
         *)
         if verbose then
-            printf "tuneTailsOpt: rt=%d rb=%d ft=%d fb=%d rD=%f aD=%f fD=%f (rLen=%d) (fLen=%d)"
+            printfn "tuneTailsOpt: (TOP) rt=%d rb=%d ft=%d fb=%d rD=%f aD=%f fD=%f (rLen=%d) (fLen=%d)"
                 state.rt state.rb state.ft state.fb
                 (state.bestRevDelta/1.0<C>) (state.bestAnnealDelta/1.0<C>) (state.bestFwdDelta/1.0<C>)
                 (state.rt+state.rb) (state.ft+state.fb)
@@ -255,6 +264,8 @@ let tuneTails
                     else dp.targetTm - (Amyris.Bio.primercore.temp dp.pp rev.body.arr s.rb) }
 
         let updateAnneal (s:TuneState) =
+            if verbose then printfn $"updateAnneal: Y={Y} s.rt={s.rt} X={X} s.ft={s.ft} fullTemplate.Length={fullTemplate.Length}"
+            assert(X-s.ft+1>=0)
             {s with bestAnnealDelta =
                     annealTarget
                   - (Amyris.Bio.primercore.temp
@@ -300,7 +311,8 @@ let tuneTails
                         elif state.fb < fwd.body.Length then yield EXT_F_AMP
                         if state.bestAnnealDelta < 0.0<C> && state.ft > fwdTailLenMin then
                             yield CHOP_F_ANNEAL
-                        elif state.ft < fwdTailLenMax then yield EXT_F_ANNEAL
+                        elif state.ft < fwdTailLenMax then
+                            yield EXT_F_ANNEAL
 
                         match sign state.bestAnnealDelta, sign state.bestFwdDelta with
                         | +1,+1 -> // both anneal and fwd amp are too cold, could cut either back and extend the other
@@ -346,7 +358,8 @@ let tuneTails
                     if revTailLenFixed.IsNone then
                         if state.bestAnnealDelta < 0.0<C> && state.rt > revTailLenMin
                             then yield CHOP_R_ANNEAL
-                        elif state.rt < revTailLenMax then yield EXT_R_ANNEAL
+                        elif state.rt < revTailLenMax then
+                            yield EXT_R_ANNEAL
 
                         match sign state.bestAnnealDelta, sign state.bestRevDelta with
                         | +1,+1 -> // both anneal and rev amp are too cold, could cut either back and extend the other
@@ -375,6 +388,7 @@ let tuneTails
                         | 0,0 -> () // no complaints
                         | _ as x -> failwithf "unexpected combo %A" x
             } |> Array.ofSeq
+        if verbose then printfn "pre-moves: %s" (String.Join(",",[for m in moves -> string m]))
 
         let newStates =
             moves |> Array.map (fun s -> (s,makeMove s))
@@ -388,7 +402,7 @@ let tuneTails
                     ((abs(s.bestFwdDelta)+(abs s.bestAnnealDelta)+(abs s.bestRevDelta))/1.0<C>)
                     (s.bestRevDelta/1.0<C>) (s.bestAnnealDelta/1.0<C>) (s.bestFwdDelta/1.0<C>)
               |]
-            printf " moves: %s "
+            printfn " legal moves: %s "
                 (String.Join(",", moveStates))
 
         if newStates.Length = 0 then
@@ -412,7 +426,7 @@ let tuneTails
                         if better s bestS then (move,s) else (bestMove,bestS))
                     (newStates.[0])
 
-            if verbose then printf "bestM=%A" bestMove
+            if verbose then printfn "  bestM=%A" bestMove
 
             let primersOutOfSpec =
                 state.fb+state.ft > dp.pp.maxLength  || // total forward oligo too long
@@ -422,7 +436,7 @@ let tuneTails
 
             if better lowestS state then
                 if verbose then
-                    printfn " cont, better option bestS=[%A]  currS=[%A]" lowestS state
+                    printfn "  (BOTTOM) cont, better option bestS=[%A]  currS=[%A]" lowestS state
                 tuneTailsOpt (itersRemaining-1) lowestS seen
             else
                 if primersOutOfSpec then
@@ -439,7 +453,7 @@ let tuneTails
 
                     tuneTailsOpt (itersRemaining-1) lowestS seen
                 else
-                    if verbose then printfn " best not better, done"
+                    if verbose then printfn " (BOTTOM/END) best not better, done"
                     state
 
     // Calculate all the starting temperatures for the 3 pieces so we know where we stand
@@ -467,13 +481,17 @@ let tuneTails
         printfn "tuneTailOpt: starting revTailLenFixed=%s"
             (match revTailLenFixed with | None -> "no" | Some(x) -> sprintf "yes %d" x)
         printfn "tuneTailOpt: starting fwdTailLenMin=%d" fwdTailLenMin
+        printfn "tuneTailOpt: starting fwdTailLenMax=%d" fwdTailLenMax
         printfn "tuneTailOpt: starting revTailLenMin=%d" revTailLenMin
+        printfn "tuneTailOpt: starting firmMiddle=%s" (match firmMiddle with | Some v -> string v | None -> "none specified")
+        printfn "tuneTailOpt: starting revTailLenMax=%d" revTailLenMax
         printfn "tuneTailOpt: starting startAnnealTm=%f" (startAnnealTm/1.0<C>)
         printfn "tuneTailOpt: starting annealTarget=%f" (annealTarget/1.0<C>)
         printfn "tuneTailOpt: starting middleDNA=%O" middleDNA
         printfn "tuneTailOpt: starting fwdTemplate=%O" fwdTemplate
         printfn "tuneTailOpt: starting revTemplate=%O" revTemplate
         printfn "tuneTailOpt: starting fullTemplate=%O" fullTemplate
+        printfn $"tuneTailOpt: starting dp={dp}"
 
     let rec trimIfNeeded (p:Primer) =
         if p.lenLE(dp.pp.maxLength) then p else
@@ -531,7 +549,22 @@ let tuneTails
         assert(finalParams.ft<=fwdTemplate.Length)
         assert(finalParams.rt<=revTemplate.Length)
 
-        let overlapLen = f + r - inlineLen
+        (*
+                  Y             X
+                p1                                p2
+                >....fwd tail....|
+                >----------------|---------------->
+        <--------| common region |...
+        p3                          p4
+                 |--r rev tail----<
+        *)
+        let p1 = X-finalParams.ft+1
+        let p2 = X+finalParams.fb
+        let p3 = Y-finalParams.rb
+        let p4 = Y+finalParams.rt-1
+        let leftOverlap = max p1 p3
+        let rightOverlap = min p2 p4
+        let overlapLen = rightOverlap - leftOverlap + 1
         let fwdFinalLen = f + finalParams.fb
         let revFinalLen = r + finalParams.rb
 
@@ -540,7 +573,7 @@ let tuneTails
                 tail = fwdTemplate.[fwdTemplate.Length-f..];
                 body = fwd.body.[..finalParams.fb-1];
                 annotation =
-                   [{il = 0; ir = overlapLen-1; iType = DNAIntervalType.ANNEAL};
+                   [{il = p1-leftOverlap |> max 0; ir = rightOverlap-p1; iType = DNAIntervalType.ANNEAL};
                     {il = fwdFinalLen-finalParams.fb; ir = fwdFinalLen-1; iType = DNAIntervalType.AMP};
                     {il = (fwdFinalLen-finalParams.fb-inlineLen |> max 0); // might not cover full inline region
                      ir = fwdFinalLen-finalParams.fb-1;
@@ -551,7 +584,7 @@ let tuneTails
                 tail = revTemplate.[revTemplate.Length-r..];
                 body = rev.body.[..finalParams.rb-1];
                 annotation =
-                   [{il = 0;ir=overlapLen-1; iType = DNAIntervalType.ANNEAL};
+                   [{il = p4-rightOverlap |> max 0;ir=p4-leftOverlap; iType = DNAIntervalType.ANNEAL};
                     {il = revFinalLen-finalParams.rb; ir = revFinalLen-1; iType = DNAIntervalType.AMP};
                     {il = revFinalLen-finalParams.rb-inlineLen |> max 0; // might not cover full inline region
                      ir = revFinalLen-finalParams.rb-1;
@@ -559,7 +592,7 @@ let tuneTails
            }
 
         // Check that the antiparallel primers overlap in the middle except when they were clearly not intended to
-        // e.g. linkerless cases we aren't actually briding
+        // e.g. linkerless cases we aren't actually bridging
         if fwdTailLenMin > 0 && revTailLenMin > 0 then
             checkAntiParallelOverlap fwd.Primer rev.Primer
 
