@@ -1,3 +1,7 @@
+#### 0.5.2 - May 5th 2023
+* Wired in linker assignment --seamless false will now use ryse linker assigner
+* fasta output provider
+* more extensive snapgene palette , bug with snapgene not recognizing "red" fixed
 #### 0.5.1 - April 4th 2023
 * bug fix for --seamless true case, also covers certain linker junction problems where floating ends of a part (e.g. pTDH3) don't get updated when the part end moves
 

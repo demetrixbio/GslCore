@@ -67,6 +67,7 @@
     <Compile Include="TaggingProvider.fs" />
     <Compile Include="GslcProcess.fs" />
     <Compile Include="SeamlessPlugin.fs" />
+    <Compile Include="LinkerPlugin.fs" />
     <Compile Include="Gslc.fs" />
   </ItemGroup>
   <Import Project="..\..\packages\FsLexYacc\build\FsLexYacc.targets" />

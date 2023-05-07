@@ -52,15 +52,15 @@ let adjustToPhysical (feat:sgd.Feature) (f:RelPos) =
 /// Transform all non gXXX forms of gene into gXX forms.
 let translateGenePrefix (pragmas:PragmaCollection) (gd : GenomeDef) (gPart : StandardSlice) =
     match gPart with
-    | PROMOTER ->   
+    | PROMOTER ->
         { left = { x = match pragmas.TryFind "promlen"  with
-                        | None -> -gd.getPromLen() 
-                        | Some p -> p.args.[0] |> int |> (*)-1<OneOffset> ;  
+                        | None -> -gd.getPromLen()
+                        | Some p -> p.args.[0] |> int |> (*)-1<OneOffset> ;
                    relTo = FivePrime
                  };
          lApprox = true;
          rApprox = false;
-         right = { x = -1<OneOffset>; relTo = FivePrime } 
+         right = { x = -1<OneOffset>; relTo = FivePrime }
         }
     | UPSTREAM ->
         {left = {x = -gd.getFlank(); relTo = FivePrime};
@@ -72,9 +72,9 @@ let translateGenePrefix (pragmas:PragmaCollection) (gd : GenomeDef) (gPart : Sta
          lApprox = false;
          rApprox = true;
          right = { x = match pragmas.TryFind "termlen"  with
-                        | None -> gd.getTermLen() 
-                        | Some p -> p.args.[0] |> int |> (*)1<OneOffset> ; 
-                   relTo = ThreePrime 
+                        | None -> gd.getTermLen()
+                        | Some p -> p.args.[0] |> int |> (*)1<OneOffset> ;
+                   relTo = ThreePrime
                   }
         }
     | DOWNSTREAM ->
@@ -101,12 +101,12 @@ let translateGenePrefix (pragmas:PragmaCollection) (gd : GenomeDef) (gPart : Sta
         {left = {x = 1<OneOffset>; relTo = FivePrime};
          lApprox = false;
          rApprox = true;
-         right = { x = 
+         right = { x =
                     match pragmas.TryFind "termlenmrna"  with
-                    | None -> gd.getTermLenMRNA() 
+                    | None -> gd.getTermLenMRNA()
                     | Some p -> p.args.[0] |> int |> (*)1<OneOffset>
-                 ; relTo = ThreePrime 
-                 } 
+                 ; relTo = ThreePrime
+                 }
         }
 
 
@@ -252,7 +252,7 @@ let expandGenePart
     // If the dna source is empty, then we are going to pull the DNA
     // part from the default reference genome, so we should make the
     // dnaSource field reflect this
-    let dnaSource = 
+    let dnaSource =
         if specifiedDnaSource = "" then defaultRefGenome
         else specifiedDnaSource
 
@@ -395,9 +395,9 @@ let expandGenePart
         // need genomic coordinates for the gene
 
         /// fivePrime is the genomic start of the element (can be > stop)
-        let fivePrime = adjustToPhysical feat finalSliceWithApprox.left 
+        let fivePrime = adjustToPhysical feat finalSliceWithApprox.left
         /// threePrime is the genomic end of the element
-        let threePrime = adjustToPhysical feat finalSliceWithApprox.right 
+        let threePrime = adjustToPhysical feat finalSliceWithApprox.right
 
         assert((feat.fwd&&fivePrime<=threePrime) || (not feat.fwd && fivePrime>=threePrime))
 
@@ -417,7 +417,7 @@ let expandGenePart
                 (gp.part.gene + (printSlice finalSlice))
 
         /// left' is the genomic coordinate of the genomic left
-        let left', right' = if feat.fwd then fivePrime, threePrime else threePrime, fivePrime 
+        let left', right' = if feat.fwd then fivePrime, threePrime else threePrime, fivePrime
         if verbose then printf "log: final: %s %A %A\n" feat.gene left' right'
         assert(left' <= right')
 
@@ -485,9 +485,9 @@ let expandGenePart
          uri = getUri ppp;
          dna = dna;
          sourceChr = feat.chr |> string;
-         /// NB: sourceFr is the origin of the left hand end of the placed part in final part orientation
+         // NB: sourceFr is the origin of the left hand end of the placed part in final part orientation
          sourceFr = left'
-         /// NB: sourceTo is the origin of the right hand end of the placed part in final part orientation
+         // NB: sourceTo is the origin of the right hand end of the placed part in final part orientation
          sourceTo = right'
          sourceFwd = feat.fwd;
          amplified = true;
@@ -551,12 +551,12 @@ let expandAssembly
                 | MARKERPART ->
                     // Choose provider
                     let providers =
-                        markerProviders |> 
-                            List.choose (fun provider -> 
+                        markerProviders |>
+                            List.choose (fun provider ->
                                                     match provider.ScoreJob a.capabilities with
                                                         | None -> None
                                                         | Some(score) -> Some (score,provider)
-                                        ) 
+                                        )
                     if providers = [] then failwithf "MARKERPART substitution, no marker provider available"
                     let _,markerProvider = providers |> List.maxBy (fst)
 
@@ -590,11 +590,11 @@ let expandAssembly
         } |> List.ofSeq |> recalcOffset
 
     let materializedParts = expandPPPList a.parts
-    let assemblyName = 
+    let assemblyName =
          match a.name with
          | None -> sprintf "A%d" index
          | Some(s) -> s
-         
+
     let topology = a.pragmas |> determineTopology
     { id = Some(index)
       dnaParts = materializedParts
