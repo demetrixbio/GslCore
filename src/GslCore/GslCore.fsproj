@@ -40,6 +40,7 @@
     <Compile Include="CommandConfig.fs" />
     <Compile Include="CloneManager.fs" />
     <Compile Include="Genbank.fs" />
+    <Compile Include="FastaOutput.fs" />
     <Compile Include="Snapgene.fs" />
     <Compile Include="Ape.fs" />
     <Compile Include="PrimerDump.fs" />

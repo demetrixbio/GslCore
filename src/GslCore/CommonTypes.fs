@@ -15,9 +15,9 @@ type SequenceLibrary = Map<string, Dna>
 /// Instructions gleaned from command line
 type ParsedOptions =
    { quiet: bool
-     refStrain: string 
-     libDir: string 
-     iter: bool 
+     refStrain: string
+     libDir: string
+     iter: bool
      onlyPhase1: bool
      doParallel: bool
      verbose: bool
@@ -94,8 +94,9 @@ let orfOffsetFromAlleleOffset (offset: int<ZeroOffset>) =
 
 /// Slice annotation for indicating the presence of an ORF in a slice.
 type OrfAnnotation =
+   {
     /// The leftmost base pair of this ORF.
-   {left: int<ZeroOffset>;
+    left: int<ZeroOffset>;
     /// The rightmost base pair of this ORF, inclusive.
     right: int<ZeroOffset>;
     /// Is the first base of this ORF offset into a codon?

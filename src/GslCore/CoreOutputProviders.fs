@@ -158,6 +158,22 @@ let primerOutputPlugin =
         (PrimerOutputProvider(None))
 
 
+type FastaOutputProvider (outPath) =
+    inherit ConfigurableOutputProvider<string>(outPath)
+    with
+    override x.ArgSpec =
+        {name = "fasta"; param = ["outfile"]; alias = [];
+         desc = "write a fasta file for results to outputfile"}
+    override x.UseArg(arg) =
+        FastaOutputProvider(Some(arg.values.[0]))
+        :> IOutputFormat
+    override x.DoOutput(path, data) = fastaOutput.dumpFasta path data.assemblies
+let fastaOutputPlugin =
+    outputPlugin
+        "fasta_file"
+        (Some "Fasta file format output provider.  Enables dumping of assembly and part data in fasta format.")
+        (FastaOutputProvider(None))
+
 let basicOutputPlugins = [
     flatFileOutputPlugin;
     cloneManagerOutputPlugin;
@@ -165,4 +181,5 @@ let basicOutputPlugins = [
     snapGeneOutputPlugin;
     docstringOutputPlugin;
     primerOutputPlugin;
+    fastaOutputPlugin
 ]

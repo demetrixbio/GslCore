@@ -15,6 +15,17 @@ let topologyToString : Topology -> string =
     | Linear -> "linear"
     | Circular -> "circular"
 
+let palette = [|
+    "#233d4d"
+    "#bc4749"
+    "#fe7f2d"
+    "#fcca46"
+    "#a1c181"
+    "#619b8a"
+    "#583101"
+    "#bf0603"
+    "#a7c957"
+    |]
 /// Emit Snapgene (genbank) format
 ///  outDir : string   tag: string  prefix for files  assemblies : List of AssemblyOut
 let dumpSnapgene
@@ -22,9 +33,9 @@ let dumpSnapgene
     (tag : string)
     (assemblies : DnaAssembly list)
     (primers : DivergedPrimerPair list list option) : unit =
-    
+
     // pair up the primer list (if they exist) with the matching assembly
-    let assemWithPrimers =  
+    let assemWithPrimers =
         match primers with
         | Some p -> p
         | None -> List.init assemblies.Length (fun _ -> [])
@@ -32,10 +43,10 @@ let dumpSnapgene
 
     for (a,primers) in assemWithPrimers do
 
-        let path = sprintf "%s.%d.dna" tag 
-                    (match a.id with 
+        let path = sprintf "%s.%d.dna" tag
+                    (match a.id with
                         | None -> failwithf "unassigned assembly id in %s" a.name
-                        | Some(i) -> i 
+                        | Some(i) -> i
                     )
                     |> opj outDir
         printf "Writing snapgene output to dir=%s tag=%s path=%s\n" outDir tag path
@@ -43,8 +54,8 @@ let dumpSnapgene
 
         use outF = new StreamWriter(path)
         let w (s:string) = outF.Write(s)
-        
-        // "Exported" // snapgene fails to color anything if it's named anything else locusName 
+
+        // "Exported" // snapgene fails to color anything if it's named anything else locusName
         let locusName = sprintf "Exported GSL %s" tag
         let totLength = a.dnaParts |> List.map (fun p -> p.dna.Length) |> Seq.sum
         let now = DateTime.Now
@@ -54,7 +65,7 @@ let dumpSnapgene
         1) LOCUS must contain "Exported".
         2) Last reference TITLE must be "Direct Submission".
         3) Last reference JOURNAL must contain "SnapGene".
-            (In the past we did require it contain "Exported from SnapGene" or "Exported from SnapGene Viewer" 
+            (In the past we did require it contain "Exported from SnapGene" or "Exported from SnapGene Viewer"
             but we recently relaxed that requirement. The change is in version 4.1.)
         *)
         sprintf "LOCUS       %-22s %d bp ds-DNA     %s   SYN %2d-%s-%d
@@ -76,7 +87,7 @@ FEATURES             Location/Qualifiers
                      /organism=\"synthetic DNA construct\"
                      /mol_type=\"other DNA\"
                      /note=\"color: #ffffff\"
-"           locusName 
+"           locusName
             totLength  // header line locus length
             topology
             now.Day (mon.[now.Month-1]) now.Year  // header line date
@@ -86,39 +97,41 @@ FEATURES             Location/Qualifiers
         |> w
 
         for p in a.dnaParts do
-            let colorFwd = 
-                match p.sliceType with 
-                | REGULAR -> 
+            let colorFwd =
+                match p.sliceType with
+                | REGULAR ->
                     match p.breed with
-                    | Breed.B_UPSTREAM -> "#009933"
-                    | Breed.B_DOWNSTREAM -> "#009933"
-                    | Breed.B_PROMOTER -> "#3399FF"
-                    | Breed.B_FUSABLEORF -> "#FF0000"
-                    | Breed.B_GS -> "#FF3300"
-                    | Breed.B_GST -> "#FF6600"
+                    | Breed.B_UPSTREAM -> palette[0] // "#009933"
+                    | Breed.B_DOWNSTREAM -> palette[0] // "#009933"
+                    | Breed.B_PROMOTER -> palette[8] // "#3399FF"
+                    | Breed.B_FUSABLEORF -> palette[2] // "#FF0000"
+                    | Breed.B_GS -> palette[2] // "#FF3300"
+                    | Breed.B_GST -> palette[2] // "#FF6600"
                     | Breed.B_INLINE -> "#99CCFF"
-                    | Breed.B_TERMINATOR -> "#000066"
+                    | Breed.B_TERMINATOR -> palette[7] // "#000066"
                     | Breed.B_VIRTUAL -> "#FF0066"
-                    | Breed.B_LINKER -> "#996633"
-                    | Breed.B_MARKER -> "#336600"
-                    | Breed.B_X -> "#000000"
-                | LINKER -> "#FF0000"
-                | MARKER -> "yellow" 
-                | INLINEST -> "green" 
-                | FUSIONST -> "red"
+                    | Breed.B_LINKER -> palette[6] // "#996633"
+                    | Breed.B_MARKER -> palette[3] // "#336600"
+                    | Breed.B_X -> palette[4] // "#000000"
+                | LINKER -> palette[6] // "#FF0000"
+                | MARKER -> palette[3] // "yellow"
+                | INLINEST -> palette[4] // "green"
+                | FUSIONST -> palette[5] // "red"
+            // Useful for color palette debugging
+            // printfn $"XXX: colorFwd={colorFwd} for part {p.id|> Option.defaultValue -1} {p.description} {p.sliceType} {p.breed}"
             let colorRev = colorFwd // reserve possibility of different colors for different orientations but for now the same
             let range = sprintf (if p.destFwd then "%A..%A" else "complement(%A..%A)") (zero2One p.destFr) (zero2One p.destTo)
-            let label = 
-                if p.sliceName <> "" then 
-                    p.sliceName 
-                 else if p.description <> "" then 
-                    p.description 
+            let label =
+                if p.sliceName <> "" then
+                    p.sliceName
+                 else if p.description <> "" then
+                    p.description
                  else (ambId p.id)
             sprintf "     misc_feature    %s
                      /label=\"%s\"
                      /note=\"%s\"
                      /note=\"color: %s; direction: %s\"\n"
-                        range 
+                        range
                         label
                         label
                         (if p.destFwd then colorFwd else colorRev)
@@ -131,41 +144,41 @@ FEATURES             Location/Qualifiers
 
         let emitPrimer isFwd (primer:Primer) =
             let searchDna = if isFwd then primer.Primer else primer.Primer.RevComp()
-            let ampBody = 
-                match primer.Interval DNAIntervalType.AMP with 
+            let ampBody =
+                match primer.Interval DNAIntervalType.AMP with
                     | Some(i) -> primer.Primer.[i.il..i.ir]
                     | None -> primer.body
             //search using either the ampBody or reverse complement of it depending on direction of primer
             let searchBody =  if isFwd then ampBody else ampBody.RevComp()
             // this isn't an ideal way to place primers but simpler than trying to infer coordinates during emission
             // will break if there are multiple binding sites but that might be a good thing to alert user
-            let left = a.Sequence().IndicesOf(searchDna) |> Seq.head 
+            let left = a.Sequence().IndicesOf(searchDna) |> Seq.head
             let right = left + primer.Primer.Length-1
             // naming primers using part it binds to
-            let containsPrimer (part:DNASlice) = 
+            let containsPrimer (part:DNASlice) =
                 part.dna.Contains searchBody
             let bindingPart = List.tryFind containsPrimer a.dnaParts
             let name =
                 match bindingPart with
-                | Some value -> 
+                | Some value ->
                     if value.sliceName <> "" then
                         value.sliceName
                     else if value.description <> "" then
                         value.description
                     else (ambId value.id)
                 | None -> ""
-            
-            sprintf "     primer_bind     %s 
+
+            sprintf "     primer_bind     %s
              /note=\"%s_%s\"
-             /note=\"color: #a020f0; sequence: %s; direction: %s\"\n" 
-                (makeRange left right |> if isFwd then (id) else complement)  
+             /note=\"color: #a020f0; sequence: %s; direction: %s\"\n"
+                (makeRange left right |> if isFwd then (id) else complement)
                 name
                 (if isFwd then "fwd" else "rev")
                 primer.Primer.str
                 (if isFwd then "RIGHT" else "LEFT")
             |> w
 
-        for pp in primers do 
+        for pp in primers do
             match pp with
             | GAP -> () // nothing to emit
             | SANDWICHGAP -> () // nothing to emit
@@ -174,7 +187,7 @@ FEATURES             Location/Qualifiers
                 if dpp.rev.Primer.Length > 0 then emitPrimer false dpp.rev
 
         "ORIGIN\n" |> w
-        
+
         a.Sequence()
         |> formatGB
         |> w
