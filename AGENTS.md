@@ -29,10 +29,11 @@ This file is intended for future coding agents and maintainers making changes in
 - NuGet package target: `NuGet` (writes `.nupkg` to `bin/`).
 - NuGet publish target: `PublishNuget`.
 
-Environment variables used by publishing:
+Publishing notes:
 
-- `NUGET_KEY` (required)
-- `NUGET_SOURCE` (optional, defaults to `https://api.nuget.org/v3/index.json`)
+- Trusted Publishing is the preferred GitHub Actions flow for NuGet.org and uses OIDC (`id-token: write`) plus the `NuGet/login@v1` action.
+- The workflow expects the `NUGet_USERNAME` secret to be configured in GitHub for the NuGet.org account that owns the package.
+- The legacy manual API-key path still uses `NUGET_KEY` and `NUGET_SOURCE` in the FAKE build script for local or ad hoc uploads.
 
 ## Important Files
 

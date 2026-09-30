@@ -7,6 +7,8 @@
 * Upgrade FAKE build dependencies to `6.1.4` and refresh transitive build stack dependencies.
 * Resolve known vulnerable transitive packages in the build project dependency graph.
 * Update Newtonsoft.Json to `13.0.4`.
+* Add NuGet package README and copyright metadata required for package publication.
+* Migrate publishing to NuGet Trusted Publishing via GitHub Actions OIDC (`id-token: write`) and `NuGet/login@v1`, while keeping the legacy API-key flow available for local/manual upload fallback.
 
 #### 0.5.2 - May 5th 2023
 * Wired in linker assignment --seamless false will now use ryse linker assigner
