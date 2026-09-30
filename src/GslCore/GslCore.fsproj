@@ -11,6 +11,9 @@
     <PackageProjectUrl>https://github.com/demetrixbio/GslCore</PackageProjectUrl>
     <RepositoryUrl>https://github.com/demetrixbio/GslCore</RepositoryUrl>
     <PackageTags>GSL compiler amyris yeast F# demetrix</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageCopyright>Copyright 2019-2026 Amyris, Demetrix</PackageCopyright>
+    <Copyright>Copyright 2019-2026 Amyris, Demetrix</Copyright>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
@@ -21,6 +24,7 @@
   -->
   <ItemGroup>
     <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="" />
     <PackageReference Include="Dmx.Amyris.Bio" />
     <PackageReference Include="FSharp.Collections.ParallelSeq" />
     <PackageReference Include="FSharp.Data" />
