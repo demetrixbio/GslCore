@@ -2,12 +2,12 @@
 // FAKE build script
 // --------------------------------------------------------------------------------------
 
-// #r "paket: groupref netcorebuild//"
+// #r "nuget: Fake.Core.Target"
 // #if FAKE
-// #r "paket:
+// #r "nuget:
 // nuget Fake.Api.GitHub
 // nuget Fake.DotNet.Cli
-// nuget Fake.DotNet.Paket
+// nuget Fake.DotNet.NuGet
 // nuget Fake.DotNet.AssemblyInfoFile
 // nuget Fake.DotNet.Testing.Expecto
 // nuget Fake.Core.Process
@@ -68,7 +68,7 @@ let tags = "GSL amyris compiler demetrix"
 let solutionFile  = "GslCore.sln"
 
 // Pattern specifying assemblies to be tested using NUnit
-let testAssemblies = "tests/**/bin/Release/netcoreapp2.0/*Tests*.dll"
+let testAssemblies = "tests/**/bin/Release/net10.0/*Tests*.dll"
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted
@@ -86,6 +86,7 @@ let gitRaw = Environment.environVarOrDefault "gitRaw" "https://raw.githubusercon
 
 // Read additional information from the release notes document
 let release = ReleaseNotes.load "RELEASE_NOTES.md"
+let packageProject = "src/GslCore/GslCore.fsproj"
 
 // Helper active pattern for project types
 let (|Fsproj|Csproj|Vbproj|Shproj|) (projFileName:string) =
@@ -172,40 +173,45 @@ let initTargets () =
         ++ "tests/**/*.??proj"
         |> Array.ofSeq
         |> Array.iter (fun project ->
-            project
-            |> DotNet.build (fun buildOptions ->
-                { buildOptions with
-                    Configuration = DotNet.BuildConfiguration.Release })))
+            let result = DotNet.exec id "build" (sprintf "\"%s\" -c Release" project)
+            if not result.OK then failwithf "dotnet build failed for %s" project))
 
 
     // --------------------------------------------------------------------------------------
     // Run the unit tests using test runner
 
     Target.create "RunTests" (fun _ ->
-        DotNet.test
-            (fun parameters ->
-                { parameters with Configuration = DotNet.BuildConfiguration.Release })
-            "tests/GslCore.Tests"
+        let result = DotNet.exec id "test" "tests/GslCore.Tests/GslCore.Tests.fsproj -c Release --no-build"
+        if not result.OK then failwith "dotnet test failed"
     )
 
     // --------------------------------------------------------------------------------------
     // Build a NuGet package
 
     Target.create "NuGet" (fun _ ->
-        Paket.pack(fun p ->
-            { p with
-                ToolType = ToolType.CreateCLIToolReference()
-                OutputPath = "bin"
-                Version = release.NugetVersion
-                MinimumFromLockFile = true
-                ReleaseNotes = String.toLines release.Notes})
+        let result =
+            DotNet.exec
+                id
+                "pack"
+                (sprintf "\"%s\" -c Release --no-build -o bin /p:PackageVersion=%s" packageProject release.NugetVersion)
+
+        if not result.OK then failwith "dotnet pack failed"
     )
 
     Target.create "PublishNuget" (fun _ ->
-        Paket.push(fun p ->
-            { p with
-                ToolType = ToolType.CreateCLIToolReference()
-                WorkingDir = "bin" })
+        let packageFile =
+            !! (sprintf "bin/%s.%s.nupkg" dmxProject release.NugetVersion)
+            |> Seq.tryHead
+            |> Option.defaultWith (fun _ -> failwithf "Expected package bin/%s.%s.nupkg was not found" dmxProject release.NugetVersion)
+
+        DotNet.nugetPush
+            (fun p ->
+                { p with
+                    PushParams =
+                        { p.PushParams with
+                            Source = Some (Environment.environVarOrDefault "NUGET_SOURCE" "https://api.nuget.org/v3/index.json")
+                            ApiKey = Some (Environment.environVarOrFail "NUGET_KEY") } })
+            packageFile
     )
 
     // --------------------------------------------------------------------------------------

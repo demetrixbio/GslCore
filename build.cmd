@@ -1,3 +1,2 @@
-dotnet tool restore
-dotnet paket restore
-dotnet run --project build %*
+dotnet restore GslCore.sln
+dotnet run --project build -- %*
