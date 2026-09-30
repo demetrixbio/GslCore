@@ -1,3 +1,13 @@
+#### 0.6.0 - September 30th 2026
+* Upgrade all projects to `net10.0` and update SDK pinning to .NET 10 (`global.json`).
+* Remove Paket-based dependency management and restore flow.
+* Adopt Central Package Management via `Directory.Packages.props` with SDK-style `PackageReference` across all projects.
+* Replace Paket-based NuGet packaging/publishing in FAKE build with `dotnet pack`/`dotnet nuget push` flow.
+* Refresh CI/build scripts to use standard `dotnet restore` and .NET 10 setup.
+* Upgrade FAKE build dependencies to `6.1.4` and refresh transitive build stack dependencies.
+* Resolve known vulnerable transitive packages in the build project dependency graph.
+* Update Newtonsoft.Json to `13.0.4`.
+
 #### 0.5.2 - May 5th 2023
 * Wired in linker assignment --seamless false will now use ryse linker assigner
 * fasta output provider

@@ -17,12 +17,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 7.0.x
-    - name: Restore tool dependencies
-      run: dotnet tool restore
+        dotnet-version: 10.0.x
     - name: Restore dependencies
-      run: dotnet paket restore
+      run: dotnet restore GslCore.sln
     - name: Build
-      run: dotnet run --project build
+      run: dotnet run --project build -- All

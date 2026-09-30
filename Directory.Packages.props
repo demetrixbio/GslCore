@@ -1,0 +1,42 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Dmx.Amyris.Bio" Version="2.0.29" />
+    <PackageVersion Include="FSharp.Collections.ParallelSeq" Version="1.2.0" />
+    <PackageVersion Include="FSharp.Data" Version="5.0.2" />
+    <PackageVersion Include="FsLexYacc" Version="11.0.1" />
+    <PackageVersion Include="FsLexYacc.Runtime" Version="11.0.1" />
+    <PackageVersion Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="NUnit" Version="3.13.3" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="4.3.1" />
+
+    <PackageVersion Include="Microsoft.Build.Framework" Version="18.10.1" />
+    <PackageVersion Include="Microsoft.Build.Tasks.Core" Version="18.10.1" />
+    <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="18.10.1" />
+    <PackageVersion Include="NuGet.Common" Version="7.9.0" />
+    <PackageVersion Include="NuGet.Packaging" Version="7.9.0" />
+    <PackageVersion Include="NuGet.Protocol" Version="7.9.0" />
+    <PackageVersion Include="System.Drawing.Common" Version="10.0.12" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.12" />
+
+    <PackageVersion Include="Fake.Api.GitHub" Version="6.1.4" />
+    <PackageVersion Include="Fake.Core.Process" Version="6.1.4" />
+    <PackageVersion Include="Fake.Core.ReleaseNotes" Version="6.1.4" />
+    <PackageVersion Include="Fake.Core.SemVer" Version="6.1.4" />
+    <PackageVersion Include="Fake.Core.String" Version="6.1.4" />
+    <PackageVersion Include="Fake.Core.Target" Version="6.1.4" />
+    <PackageVersion Include="Fake.Core.UserInput" Version="6.1.4" />
+    <PackageVersion Include="Fake.DotNet.AssemblyInfoFile" Version="6.1.4" />
+    <PackageVersion Include="Fake.DotNet.Cli" Version="6.1.4" />
+    <PackageVersion Include="Fake.DotNet.NuGet" Version="6.1.4" />
+    <PackageVersion Include="Fake.DotNet.Testing.Expecto" Version="6.1.4" />
+    <PackageVersion Include="Fake.IO.FileSystem" Version="6.1.4" />
+    <PackageVersion Include="Fake.Tools.Git" Version="6.1.4" />
+  </ItemGroup>
+</Project>

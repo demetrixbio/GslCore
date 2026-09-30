@@ -182,15 +182,11 @@ nuget/*.nupkg
 release.cmd
 release.sh
 localpackages/
-paket-files
 *.orig
-.paket/paket.exe
-.paket/Paket.Restore.targets
 docs/content/license.md
 docs/content/release-notes.md
 .fake
 docs/tools/FSharp.Formatting.svclog
-paket.local
 .idea
 .tool
 **/AssemblyInfo.fs

@@ -1,8 +1,0 @@
-Dmx.Amyris.Bio
-FSharp.Data
-FsLexYacc.Runtime
-group Test
-NUnit
-Microsoft.NET.Test.Sdk
-NUnit3TestAdapter
-NUnit.ConsoleRunner
