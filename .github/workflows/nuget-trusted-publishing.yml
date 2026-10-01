@@ -1,0 +1,59 @@
+name: NuGet Trusted Publishing
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_version:
+        description: NuGet package version to publish (for example 0.6.0)
+        required: true
+        default: 0.6.0
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Determine package version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.package_version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+
+          echo "PACKAGE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Publishing version $VERSION"
+
+      - name: Restore dependencies
+        run: dotnet restore GslCore.sln
+
+      - name: Build and test
+        run: dotnet test tests/GslCore.Tests/GslCore.Tests.fsproj -c Release --no-restore
+
+      - name: Pack NuGet package
+        run: dotnet pack src/GslCore/GslCore.fsproj -c Release --no-restore -o ./artifacts /p:PackageVersion="${PACKAGE_VERSION}"
+
+      - name: NuGet login (OIDC → temporary API key)
+        id: nuget_login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USERNAME }}
+
+      - name: NuGet push
+        run: dotnet nuget push ./artifacts/*.nupkg --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
